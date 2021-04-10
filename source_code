@@ -1,0 +1,174 @@
+#include "iostream"
+#include <random>
+#include <chrono>
+
+const int count_of_test = 100, count_of_lenth = 200;
+
+const int shell[100] {1, 2, 3, 4, 6, 8, 9, 12, 16, 18, 24, 27, 32, 36, 48, 54, 64, 72, 81, 96, 108, 128, 144, 162, 192,
+                      216, 243, 256, 288, 324, 384, 432, 486, 512, 576, 648, 729, 768, 864, 972, 1152, 1296, 1458, 1536,
+                      1728, 1944, 2187, 2304, 2592, 2916, 3456, 3888, 4374, 4608, 5184, 5832, 6561, 6912, 7776, 8748,
+                      10368, 11664, 13122, 13824, 15552, 17496, 19683, 20736, 23328, 26244, 31104, 34992, 39366, 41472,
+                      46656, 52488, 62208, 69984, 78732, 93312, 104976, 124416, 139968, 157464, 186624, 209952, 279936,
+                      314928, 373248, 419904, 559872, 629856, 839808, 1119744, 1259712, 1679616, 2519424, 3359232,
+                      5038848, 10077696};
+double b_sort[count_of_lenth][count_of_test], sel_sort[count_of_lenth][count_of_test],
+    ins_sort[count_of_lenth][count_of_test], sh_sort[count_of_lenth][count_of_test];
+
+
+void bubble_sort (int* array, const int size) {
+    int count = 0;
+    for (int i = 0; i < size - 1; ++i) {
+        for (int j = 0; j < size - 1; ++j) {
+            if (array[j] > array[j + 1]) {
+                std::swap(array[j], array[j + 1]);
+                ++count;
+            }
+        }
+        if (count == 0) {
+            break;
+        } else {
+            count = 0;
+        }
+    }
+}
+
+
+void selection_sort (int* array, const int size) {
+    int min;
+    for (int i = 0; i < size -1; ++i) {
+        min = i;
+        for (int j = i + 1; j < size; ++j) {
+            if (array[j] < array[min]) {
+                min = j;
+            }
+        }
+        std::swap(array[i], array[min]);
+    }
+}
+
+
+void insertion_sort (int* array, const int size) {
+    for (int i = 1; i < size; ++i) {
+        for (int j = i; j > 0 && array[j] < array[j - 1]; --j) {
+            std::swap(array[j], array[j - 1]);
+        }
+    }
+}
+
+
+void shell_sort (int* array, const int size) {
+    int inc = 99;
+    for (int i = 1; i < 100; ++i) {
+        if (shell[i] > size / 2) {
+            inc = i - 1;
+            break;
+        }
+    }
+
+    for (int i = inc; i > -1; --i) {
+        for (int j = 0; j < shell[i]; ++j) {
+            for (int k = j + shell[i]; k < size; k += shell[i]) {
+                for (int m = k; m > shell[i] - 1 && array[m] < array[m - shell[i]]; m -= shell[i]) {
+                    std::swap(array[m], array[m - shell[i]]);
+                }
+            }
+        }
+    }
+}
+
+
+void test_sorts (void(*bubble_sort)(int*, const int), void(*selection_sort)(int*, const int),
+                 void(*insertion_sort)(int*, const int), void(*shell_sort)(int*, const int)) {
+    std::mt19937 engine(23);
+    std::uniform_int_distribution<int> int_dist(0, 10000);
+
+    for (int i = 0; i < count_of_lenth; ++i) {
+        int cur_length = 400 + i*10;
+        for (int j = 0; j < count_of_test; ++j) {
+            int* b = new int[cur_length];
+            int* sel = new int[cur_length];
+            int* ins = new int[cur_length];
+            int* sh = new int[cur_length];
+            for (int k = 0; k < cur_length; ++k){
+                int num = int_dist(engine);
+                b[k] = num;
+                sel[k] = num;
+                ins[k] = num;
+                sh[k] = num;
+            }
+            auto start = std::chrono::high_resolution_clock::now();
+            shell_sort(sh, cur_length);
+            auto end = std::chrono::high_resolution_clock::now();
+            auto nsec = end - start;
+            sh_sort[i][j] = nsec.count() ;
+
+            start = std::chrono::high_resolution_clock::now();
+            selection_sort(sel, cur_length);
+            end = std::chrono::high_resolution_clock::now();
+            nsec = end - start;
+            sel_sort[i][j] = nsec.count();
+
+            start = std::chrono::high_resolution_clock::now();
+            insertion_sort(ins, cur_length);
+            end = std::chrono::high_resolution_clock::now();
+            nsec = end - start;
+            ins_sort[i][j] = nsec.count();
+
+            start = std::chrono::high_resolution_clock::now();
+            bubble_sort(b, cur_length);
+            end = std::chrono::high_resolution_clock::now();
+            nsec = end - start;
+            b_sort[i][j] = nsec.count();
+
+            delete[] b;
+            delete[] sel;
+            delete[] ins;
+            delete[] sh;
+        }
+    }
+
+}
+int main () {
+    test_sorts(bubble_sort, selection_sort, insertion_sort, shell_sort);
+    std::cout << "bubble sort" << std::endl;
+    for (int i = 0; i < count_of_lenth; ++i) {
+        double sum = 0;
+        for (int j = 0; j < count_of_test; ++j) {
+            sum += b_sort[i][j];
+        }
+        std::cout << sum / count_of_test;
+        std::cout << std::endl;
+    }
+
+    std::cout << "selection sort" << std::endl;
+    for (int i = 0; i < count_of_lenth; ++i) {
+        double sum = 0;
+        for (int j = 0; j < count_of_test; ++j) {
+            sum += sel_sort[i][j];
+        }
+        std::cout << sum / count_of_test;
+        std::cout << std::endl;
+    }
+
+    std::cout << "insertion sort" << std::endl;
+    for (int i = 0; i < count_of_lenth; ++i) {
+        double sum = 0;
+        for (int j = 0; j < count_of_test; ++j) {
+            sum += ins_sort[i][j];
+        }
+        std::cout << sum / count_of_test;
+        std::cout << std::endl;
+    }
+
+    std::cout << "shell sort" << std::endl;
+    for (int i = 0; i < count_of_lenth; ++i) {
+        double sum = 0;
+        for (int j = 0; j < count_of_test; ++j) {
+            sum += sh_sort[i][j];
+        }
+        std::cout << sum / count_of_test;
+        std::cout << std::endl;
+    }
+
+    return 0;
+}
